@@ -1,0 +1,62 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Select Session</label>
+                            <form method="GET" id="session_form">
+                                <select name="session" id="session" class="form-control" onchange="this.form.submit()">
+                                    <option value="">Select Session</option>
+                                    {% for session in sessions %}
+                                    <option value="{{session.id}}" {% if session.id|stringformat:"s" == selected_session %}selected{% endif %}>{{session}}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                        {% if selected_session %}
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Evaluation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students_data %}
+                                <tr>
+                                    <td>{{ student.name }}</td>
+                                    <td>
+                                        {% if student.status == "Evaluated" %}
+                                        <span class="badge badge-success">Evaluated</span>
+                                        {% else %}
+                                        <span class="badge badge-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2">No students found for this session.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p>Please select a session to view evaluation status.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

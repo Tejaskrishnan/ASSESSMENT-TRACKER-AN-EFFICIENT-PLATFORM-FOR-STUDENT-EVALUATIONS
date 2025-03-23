@@ -1,0 +1,129 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}Compare with Teachers{% endblock page_title %}
+
+{% block custom_css %}
+<style>
+    .chart-container { padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-group label { font-weight: bold; }
+    #loading { display: none; text-align: center; margin-top: 10px; }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Compare with Teacher by Time Period</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Select Teacher</label>
+                            <select id="teacher" class="form-control">
+                                <option value="">----</option>
+                                {% for staff in staff_list %}
+                                <option value="{{ staff.id }}">{{ staff.admin.first_name }} {{ staff.admin.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" class="form-control" name="start_date" id="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>End Date</label>
+                                    <input type="date" class="form-control" name="end_date" id="end_date" required>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="fetch_teacher_comparison" class="btn btn-primary btn-block">Fetch Teacher Comparison</button>
+                        <div id="loading">Loading...</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="chart-container">
+                            <canvas id="teacherComparisonChart" style="min-height: 300px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
+
+{% block custom_js %}
+<script src="{% static 'jquery/jquery.min.js' %}"></script>
+<script src="{% static 'chart.js/Chart.min.js' %}"></script>
+<script>
+console.log("Script loaded");
+$(document).ready(function() {
+    console.log("jQuery ready");
+    let chart = null;
+    console.log("Button exists:", $("#fetch_teacher_comparison").length);
+    $("#fetch_teacher_comparison").click(function() {
+        console.log("Button clicked");
+        var teacher = $("#teacher").val();
+        var start_date = $("#start_date").val();
+        var end_date = $("#end_date").val();
+        console.log("Form data:", { teacher, start_date, end_date });
+        if (!teacher || !start_date || !end_date) {
+            alert("Please select a teacher and date range.");
+            console.log("Validation failed");
+            return false;
+        }
+        $("#loading").show();
+        console.log("Sending AJAX to:", "{% url 'student_compare_teachers' %}");
+        $.ajax({
+            url: "{% url 'student_compare_teachers' %}",
+            type: 'POST',
+            data: {
+                teacher: teacher,
+                start_date: start_date,
+                end_date: end_date,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                $("#loading").hide();
+                console.log("Success response:", response);
+                if (response.subjects.length === 0) {
+                    alert("No data found for this teacher and date range.");
+                    return;
+                }
+                if (chart) chart.destroy();
+                var ctx = document.getElementById('teacherComparisonChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: response.subjects,
+                        datasets: [{
+                            label: 'Total Scores',
+                            data: response.scores,
+                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Scores' } } },
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                $("#loading").hide();
+                console.log("AJAX Error:", status, error, xhr.responseText);
+                alert("Error fetching data: " + (xhr.responseJSON?.error || "Unknown error"));
+            }
+        });
+    });
+});
+</script>
+{% endblock custom_js %}

@@ -1,0 +1,61 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                    </div>
+                    <div class="table p-2">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Session</th>
+                                    <th>Problem Solving</th>
+                                    <th>Integrity</th>
+                                    <th>Leadership</th>
+                                    <th>Discipline</th>
+                                    <th>Collaboration</th>
+                                    <th>Extra-Curricular</th>
+                                    <th>Total Score</th>
+                                    <th>Comments</th>
+                                    <th>Assigned By</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in evaluations %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ evaluation.session }}</td>
+                                    <td>{{ evaluation.problem_solving_skills }}</td>
+                                    <td>{{ evaluation.integrity }}</td>
+                                    <td>{{ evaluation.leadership }}</td>
+                                    <td>{{ evaluation.discipline }}</td>
+                                    <td>{{ evaluation.collaboration }}</td>
+                                    <td>{{ evaluation.extra_curricular_activities }}</td>
+                                    <td>{{ evaluation.total_score }}</td>
+                                    <td>{{ evaluation.comments|default:"No comments" }}</td>
+                                    <td>{{ evaluation.staff.admin.last_name }}, {{ evaluation.staff.admin.first_name }}</td>
+                                    <td>{{ evaluation.created_at|date:"Y-m-d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="12">No evaluations available.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

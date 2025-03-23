@@ -1,0 +1,58 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ page_title }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <table id="example2" class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>SN</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Gender</th>
+                                    <th>Course</th>
+                                    <th>Avatar</th>
+                                    <th>Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff_member in staff %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ staff_member.admin.last_name|default:"" }}, {{ staff_member.admin.first_name|default:"" }}</td>
+                                    <td>{{ staff_member.admin.email }}</td>
+                                    <td>{{ staff_member.admin.gender|default:"" }}</td>
+                                    <td>{{ staff_member.course.name|default:"No Course" }}</td>
+                                    <td>
+                                        {% if staff_member.admin.profile_pic %}
+                                        <img class="img img-fluid mb-2" height="100" width="100" src="{{ staff_member.admin.profile_pic }}" alt="">
+                                        {% else %}
+                                        No Image
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'edit_staff' staff_member.id %}" class="btn btn-primary">Edit</a> -
+                                        <a href="{% url 'delete_staff' staff_member.id %}" class="btn btn-danger" onclick="return confirm('Are you sure about this ?')">Delete</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="7">No staff found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

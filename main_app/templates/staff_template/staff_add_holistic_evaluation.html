@@ -1,0 +1,150 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                    </div>
+                    <form method="POST" id="evaluation_form">
+                        {% csrf_token %}
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Session Year</label>
+                                <select name="session" id="session" class="form-control">
+                                    <option value="">Select Session</option>
+                                    {% for session in sessions %}
+                                    <option value="{{session.id}}">{{session}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group" id="student_data"></div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="button" id="fetch_student" class="btn btn-primary btn-block">Fetch Students</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+    $(document).ready(function () {
+        $("#fetch_student").click(function () {
+            var session = $("#session").val();
+            $("#student_data").html("");
+
+            if (!session) {
+                alert("Please select a session year");
+                return false;
+            }
+
+            $.ajax({
+                url: "{% url 'get_students' %}",
+                type: 'POST',
+                data: {
+                    session: session,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    var json_data = JSON.parse(response);
+                    if (json_data.length < 1) {
+                        alert("No students found for this session");
+                    } else {
+                        var div_data = "<label>Student List</label><select class='form-control' name='student' id='student'>";
+                        div_data += "<option value=''>Select Student</option>";
+                        for (var i = 0; i < json_data.length; i++) {
+                            div_data += "<option value='" + json_data[i].id + "'>" + json_data[i].name + "</option>";
+                        }
+                        div_data += "</select>";
+                        $("#student_data").html(div_data);
+
+                        $("#student").change(function () {
+                            var student_id = $(this).val();
+                            var session_id = $("#session").val();
+                            if (student_id) {
+                                $.ajax({
+                                    url: "{% url 'fetch_evaluation' %}",
+                                    type: 'POST',
+                                    data: {
+                                        student: student_id,
+                                        session: session_id,
+                                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                                    },
+                                    success: function (data) {
+                                        var form_data = "";
+                                        if (data.no_data) {
+                                            form_data += "<div class='form-group row mt-3'>";
+                                            form_data += "<div class='col-md-4'><label>Problem Solving (0-10)</label><input class='form-control' name='problem_solving_skills' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Integrity (0-10)</label><input class='form-control' name='integrity' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Leadership (0-10)</label><input class='form-control' name='leadership' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "</div>";
+                                            form_data += "<div class='form-group row'>";
+                                            form_data += "<div class='col-md-4'><label>Discipline (0-10)</label><input class='form-control' name='discipline' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Collaboration (0-10)</label><input class='form-control' name='collaboration' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Extra-Curricular (0-10)</label><input class='form-control' name='extra_curricular_activities' type='number' min='0' max='10' value='0' required /></div>";
+                                            form_data += "</div>";
+                                            form_data += "<div class='form-group'><label>Comments (Optional)</label><textarea class='form-control' name='comments' rows='3'></textarea></div>";
+                                        } else {
+                                            form_data += "<div class='form-group row mt-3'>";
+                                            form_data += "<div class='col-md-4'><label>Problem Solving (0-10)</label><input class='form-control' name='problem_solving_skills' type='number' min='0' max='10' value='" + data.problem_solving_skills + "' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Integrity (0-10)</label><input class='form-control' name='integrity' type='number' min='0' max='10' value='" + data.integrity + "' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Leadership (0-10)</label><input class='form-control' name='leadership' type='number' min='0' max='10' value='" + data.leadership + "' required /></div>";
+                                            form_data += "</div>";
+                                            form_data += "<div class='form-group row'>";
+                                            form_data += "<div class='col-md-4'><label>Discipline (0-10)</label><input class='form-control' name='discipline' type='number' min='0' max='10' value='" + data.discipline + "' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Collaboration (0-10)</label><input class='form-control' name='collaboration' type='number' min='0' max='10' value='" + data.collaboration + "' required /></div>";
+                                            form_data += "<div class='col-md-4'><label>Extra-Curricular (0-10)</label><input class='form-control' name='extra_curricular_activities' type='number' min='0' max='10' value='" + data.extra_curricular_activities + "' required /></div>";
+                                            form_data += "</div>";
+                                            form_data += "<div class='form-group'><label>Comments (Optional)</label><textarea class='form-control' name='comments' rows='3'>" + data.comments + "</textarea></div>";
+                                        }
+                                        form_data += "<div class='form-group'><button id='save_evaluation' class='btn btn-success btn-block' type='submit'>Save Evaluation</button></div>";
+                                        $("#student_data").append(form_data);
+                                    },
+                                    error: function (xhr, status, error) {
+                                        alert("Error fetching evaluation: " + error);
+                                    }
+                                });
+                            } else {
+                                $("#student_data").html(div_data); // Reset to just student dropdown if no student selected
+                            }
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert("Error fetching students: " + error);
+                }
+            });
+        });
+
+        $(document).on('submit', '#evaluation_form', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: "{% url 'save_holistic_evaluation' %}",
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response === "OK") {
+                        alert("Evaluation saved successfully!");
+                        $("#student_data").html("");
+                    } else {
+                        alert("Error saving evaluation: " + response);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert("Error submitting form: " + error);
+                }
+            });
+        });
+    });
+</script>
+{% endblock custom_js %}
